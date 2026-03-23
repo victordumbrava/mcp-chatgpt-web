@@ -2,6 +2,8 @@
 
 Minimal [Model Context Protocol](https://modelcontextprotocol.io/) server that drives **ChatGPT Web** through **Playwright**, so agents in Cursor (or other MCP clients) can send prompts and read structured replies.
 
+The server keeps a **single shared Chromium + browser context** between tool calls (serialized with a lock so only one prompt runs at a time). Each call opens a **new tab** (`BrowserContext.new_page()`), then closes it, so cookies/session stay warm without leaving stale UI state attached to one page forever.
+
 ## Requirements
 
 - Python 3.10+
@@ -59,14 +61,18 @@ python -m server.main
 - `prompt` (string, required)
 - `timeout` (integer, optional) — overrides `TIMEOUT` for that call
 
-**Returns** (JSON object)
+**Returns** (JSON object; also advertised to MCP clients via `output_schema`)
 
-- `summary` — short preview of the reply (or error summary)
+- `summary` — short preview of the reply (or `[error_code] detail` on failure)
 - `full_response` — full assistant text when `status` is `ok`
 - `status` — `"ok"` or `"error"`
 - `execution_time` — seconds (wall clock)
+- `error_code` — machine-readable code when `status` is `"error"` (e.g. `session_expired`, `timeout`, `selector_changed`); `null` when ok
+- `error_detail` — full error message when `status` is `"error"`; `null` when ok
 
-Failures (login redirect, timeouts, selector drift, network) still return this shape with `status: "error"` and details in `summary`.
+Agents should prefer branching on **`error_code`** (stable) over parsing **`summary`** (human-oriented).
+
+Failures (login redirect, timeouts, selector drift, network) still return this shape with `status: "error"`.
 
 ## Session (one-time login)
 
@@ -99,7 +105,18 @@ with sync_playwright() as p:
 pytest
 ```
 
-Browser automation is not exercised in CI by default; integration depends on a valid session and live ChatGPT UI.
+**Unit tests** run by default (config, output model, session fingerprint logic, MCP import).
+
+**Browser integration tests** (marked `@pytest.mark.browser`) hit the real ChatGPT UI and catch composer/selector drift early. They are skipped unless you opt in:
+
+```bash
+export RUN_BROWSER_INTEGRATION=1
+# optional: export SESSION_PATH=/path/to/storage_state.json
+# optional: export BROWSER_TEST_TIMEOUT=120
+pytest -m browser
+```
+
+Requires `playwright install chromium` and a valid `auth/storage_state.json`. Use `pytest -m "not browser"` in CI to exclude them.
 
 ## License
 
