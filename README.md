@@ -24,13 +24,22 @@ Create `auth/storage_state.json` once by signing in with a headed browser and sa
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CHATGPT_URL` | `https://chat.openai.com` | Chat entry URL |
+| `CHATGPT_URL` | `https://chat.openai.com` | Default ChatGPT entry URL |
+| `CHATGPT_PROJECT_URL` | _(unset)_ | If set, **this** URL is opened for every tool call instead of `CHATGPT_URL`. Use the address from your browser while inside a ChatGPT **Project** (one MCP env block per Cursor workspace → one mirror project). |
 | `BROWSER_HEADLESS` | `false` | Run Chromium headless |
 | `SESSION_PATH` | `auth/storage_state.json` | Playwright storage state path |
 | `TIMEOUT` | `60` | Default tool timeout (seconds) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 
 Optional `.env` in the project root is picked up by [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/).
+
+### Per–Cursor-workspace mirror projects (env-only)
+
+1. In ChatGPT Web, create a **Project** for that repo (your “mirror”).
+2. Open the project and copy the URL from the address bar (or whatever link keeps you inside that project).
+3. In Cursor, set **`CHATGPT_PROJECT_URL`** for this server (MCP `env` for that workspace, or a workspace-specific `.env` if you run the server from that tree). Leave other workspaces on a different `CHATGPT_PROJECT_URL` or unset to use `CHATGPT_URL` only.
+
+No extra tool parameters are required; navigation always uses `chatgpt_entry_url` = `CHATGPT_PROJECT_URL` if non-empty, else `CHATGPT_URL`.
 
 ## Run (stdio / Cursor)
 
@@ -48,11 +57,16 @@ python -m server.main
     "chatgpt-web": {
       "command": "/absolute/path/to/mcp-chatgpt-web/.venv/bin/python",
       "args": ["-m", "server.main"],
-      "cwd": "/absolute/path/to/mcp-chatgpt-web"
+      "cwd": "/absolute/path/to/mcp-chatgpt-web",
+      "env": {
+        "CHATGPT_PROJECT_URL": "https://example.com/paste-your-chatgpt-project-url-here"
+      }
     }
   }
 }
 ```
+
+Use a different `CHATGPT_PROJECT_URL` (or omit it) per Cursor workspace so each project maps to its own ChatGPT Project.
 
 ## Tool: `chatgpt_web_research`
 

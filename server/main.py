@@ -15,7 +15,8 @@ mcp = FastMCP(
     "MCP ChatGPT Web",
     instructions=(
         "ChatGPT Web research via Playwright. Use chatgpt_web_research with a clear prompt. "
-        "Requires a valid saved browser session on the host running this server."
+        "Requires a valid saved browser session on the host running this server. "
+        "Optional env CHATGPT_PROJECT_URL opens a specific ChatGPT Project per workspace."
     ),
 )
 

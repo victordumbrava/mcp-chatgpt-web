@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     )
 
     chatgpt_url: str = "https://chat.openai.com"
+    chatgpt_project_url: str | None = None
     browser_headless: bool = False
     session_path: Path = Path("auth/storage_state.json")
     timeout: int = Field(default=60, ge=1)
@@ -20,3 +21,9 @@ class Settings(BaseSettings):
 
 def load_settings() -> Settings:
     return Settings()
+
+
+def chatgpt_entry_url(settings: Settings) -> str:
+    """URL opened before each prompt: mirror project link or default ChatGPT entry."""
+    explicit = (settings.chatgpt_project_url or "").strip()
+    return explicit if explicit else settings.chatgpt_url

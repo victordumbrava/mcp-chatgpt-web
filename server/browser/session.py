@@ -7,7 +7,7 @@ from playwright.async_api import BrowserContext
 from playwright.async_api import Playwright
 from playwright.async_api import async_playwright
 
-from server.config import Settings
+from server.config import Settings, chatgpt_entry_url
 from server.logger import get_logger
 
 log = get_logger(__name__)
@@ -15,15 +15,19 @@ log = get_logger(__name__)
 _playwright: Playwright | None = None
 _browser: Browser | None = None
 _context: BrowserContext | None = None
-_fingerprint: tuple[bool, str, int] | None = None
+_fingerprint: tuple[bool, str, int, str] | None = None
 
 
-def browser_context_fingerprint(settings: Settings) -> tuple[bool, str, int]:
+def browser_context_fingerprint(settings: Settings) -> tuple[bool, str, int, str]:
     """Stable tuple used to decide whether the shared context must be recreated."""
     path = settings.session_path.resolve()
-    if path.is_file():
-        return (settings.browser_headless, str(path), int(path.stat().st_mtime_ns))
-    return (settings.browser_headless, str(path), -1)
+    mtime = int(path.stat().st_mtime_ns) if path.is_file() else -1
+    return (
+        settings.browser_headless,
+        str(path),
+        mtime,
+        chatgpt_entry_url(settings),
+    )
 
 
 async def _teardown_unlocked() -> None:

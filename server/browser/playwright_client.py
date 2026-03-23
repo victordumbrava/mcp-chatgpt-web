@@ -11,7 +11,7 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import Page
 
 from server.browser.session import ensure_browser_context, shutdown_reused_browser
-from server.config import Settings
+from server.config import Settings, chatgpt_entry_url
 from server.logger import get_logger
 
 log = get_logger(__name__)
@@ -136,8 +136,10 @@ async def _research_on_page(
     timeout_s: int,
 ) -> ResearchResult:
     try:
+        entry = chatgpt_entry_url(settings)
+        log.debug("Navigating to %s", entry)
         await page.goto(
-            settings.chatgpt_url,
+            entry,
             wait_until="domcontentloaded",
             timeout=timeout_ms,
         )
