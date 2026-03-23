@@ -1,0 +1,6 @@
+fastmcp>=3.0,<4
+playwright>=1.40
+pydantic>=2.11
+pydantic-settings>=2.6
+python-dotenv>=1.0
+pytest>=8.0
